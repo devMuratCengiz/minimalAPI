@@ -1,7 +1,10 @@
+using Abstract;
 using ch_08_di.Repositories;
+using ch_08_di.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Services;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
@@ -13,7 +16,9 @@ builder.Services.AddOpenApi();
 
 //DI Registration
 
-builder.Services.AddSingleton<IBookService,BookService>();
+builder.Services.AddScoped<BookRepository>();
+
+builder.Services.AddScoped<IBookService,BookService3>();
 
 builder.Services.AddDbContext<RepositoryContext>(options=>
 {
@@ -163,72 +168,6 @@ public class Book
     public decimal Price { get; set; }
 
 }
-
-interface IBookService
-{
-    int Count { get; }
-    List<Book> GetBooks();
-    Book? GetBookById(int id);
-    void AddBook(Book book);
-    Book UpdateBook(int id, Book book);
-    void DeleteBook(int id);
-}
-
-class BookService : IBookService
-{
-    private readonly List<Book> _booklist;
-
-    public BookService()
-    {
-        //seed data
-        _booklist = new List<Book>()
-        {
-            new Book{Id =1,Title ="Ýnce Memed",Price =20},
-            new Book{Id =2,Title ="Kuyucaklý Yusuf",Price =15.5M},
-            new Book{Id =3,Title ="Çalýkuþu",Price =18.75M}
-        };
-
-    }
-
-    public List<Book> GetBooks () => _booklist;
-
-    public int Count => _booklist.Count;
-
-    public Book? GetBookById(int id) =>
-    _booklist.FirstOrDefault(b => b.Id == id);
-
-    public void AddBook(Book newBook)
-    {
-        newBook.Id = _booklist.Max(b => b.Id) + 1;
-        _booklist.Add(newBook);
-    }
-
-    public Book UpdateBook(int id,Book updateBook)
-    {
-        var book = _booklist.FirstOrDefault(b => b.Id == id);
-        if (book == null)
-        {
-            throw new BookNotFoundException(id);
-        }
-            book.Title = updateBook.Title;
-            book.Price = updateBook.Price;
-
-        return book;
-    }
-
-    public void DeleteBook(int id)
-    {
-        var book = _booklist.FirstOrDefault(b => b.Id == id);
-        if(book is not null)
-        {
-            _booklist.Remove(book);
-        }
-        else
-        {
-            throw new BookNotFoundException(id);
-        }
-    }
-    }
 
 public class ErrorDetails
 {
