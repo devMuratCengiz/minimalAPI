@@ -1,12 +1,12 @@
 using Abstract;
+using ch_08_di.Entities.DTOs;
 using ch_08_di.Repositories;
 using ch_08_di.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using Services;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 //DI Registration
+
+builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
 builder.Services.AddScoped<BookRepository>();
 
@@ -86,39 +88,17 @@ app.MapGet("/api/books/{id}", (int id , IBookService service) =>
     .Produces<ErrorDetails>(StatusCodes.Status404NotFound)
     .WithTags("GET");
 
-app.MapPost("/api/books", (Book newBook,IBookService service) =>
+app.MapPost("/api/books", (BookDtoForInsertion newBook,IBookService service) =>
 {
-    var validationResults = new List<ValidationResult>();
-    var context = new ValidationContext(newBook);
-    bool isValid = Validator.TryValidateObject(newBook, context, validationResults, true);
-
-    if (!isValid)
-    {
-        return Results.UnprocessableEntity(validationResults); //422
-    }
-
-    service.AddBook(newBook);
-    return Results.Created("/api/books/" + newBook.Id, newBook);
+    var book = service.AddBook(newBook);
+    return Results.Created("/api/books/" + book.Id, newBook);
 })
     .Produces<Book>(StatusCodes.Status201Created)
     .Produces<List<ValidationResult>>(StatusCodes.Status422UnprocessableEntity)
     .WithTags("CRUD");
 
-app.MapPut("/api/books/{id}", (int id, Book updateBook,IBookService service) =>
+app.MapPut("/api/books/{id}", (int id, BookDtoForUpdate updateBook,IBookService service) =>
 {
-    if (!(id > 0 && id <= 1000))
-    {
-        throw new ArgumentOutOfRangeException("1-1000");
-    }
-
-    var validationResults = new List<ValidationResult>();
-    var context = new ValidationContext(updateBook);
-    var isValid = Validator.TryValidateObject(updateBook, context, validationResults, true);
-
-    if (!isValid)
-    {
-        throw new ValidationException(validationResults.First().ErrorMessage);
-    }
 
     var book = service.UpdateBook(id, updateBook);
 
@@ -156,43 +136,4 @@ app.MapGet("/api/books/search", (string title,IBookService service) =>
     .WithTags("GET");
 
 app.Run();
-
-public class Book
-{
-    [Required]
-    public int Id { get; set; }
-    [MinLength(2, ErrorMessage = "Min len. must be 2")]
-    [MaxLength(20, ErrorMessage = "Max len. must be 20")]
-    public string? Title { get; set; }
-    [Range(10, 100)]
-    public decimal Price { get; set; }
-
-}
-
-public class ErrorDetails
-{
-    public int StatusCode { get; set; }
-    public string? Message { get; set; }
-    public string AtOccured => DateTime.Now.ToLongDateString();
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this);
-    }
-}
-
-public abstract class NotFoundException : Exception
-{
-    protected NotFoundException(string message) : base(message)
-    {
-
-    }
-}
-
-public sealed class BookNotFoundException : NotFoundException
-{
-    public BookNotFoundException(int id) : base($"The book with {id} could not be found.")
-    {
-
-    }
-}
 
