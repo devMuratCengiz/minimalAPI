@@ -1,4 +1,6 @@
+using ch_08_di.Repositories;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
@@ -12,6 +14,11 @@ builder.Services.AddOpenApi();
 //DI Registration
 
 builder.Services.AddSingleton<IBookService,BookService>();
+
+builder.Services.AddDbContext<RepositoryContext>(options=>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 
 var app = builder.Build();
 
@@ -145,7 +152,7 @@ app.MapGet("/api/books/search", (string title,IBookService service) =>
 
 app.Run();
 
-class Book
+public class Book
 {
     [Required]
     public int Id { get; set; }
@@ -178,7 +185,7 @@ class BookService : IBookService
         {
             new Book{Id =1,Title ="Ýnce Memed",Price =20},
             new Book{Id =2,Title ="Kuyucaklý Yusuf",Price =15.5M},
-            new Book{Id =3,Title ="Çalýkuþu",Price =18.75M},
+            new Book{Id =3,Title ="Çalýkuþu",Price =18.75M}
         };
 
     }
