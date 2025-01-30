@@ -1,39 +1,22 @@
-﻿namespace ch_08_di.Repositories
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
+
+namespace ch_08_di.Repositories
 {
-    public class BookRepository
+    public class BookRepository : RepositoryBase<Book>
     {
-        private readonly RepositoryContext _context;
-
-        public BookRepository(RepositoryContext context)
+        public BookRepository(RepositoryContext context) : base(context)
         {
-            _context = context;
         }
 
-        public Book? Get(int id)
+        public override Book? Get(int id)
         {
-            return _context.Books.FirstOrDefault(x => x.Id == id);
+            return _context.Books.Include(b=>b.Category).FirstOrDefault(b=>b.Id == id);
         }
 
-        public List<Book> GetAll()
+        public override ICollection<Book> GetAll()
         {
-            return _context.Books.ToList();
-        }
-        
-        public void Add(Book item)
-        {
-            _context.Books.Add(item);
-            _context.SaveChanges();
-        }
-        public void Remove(Book item)
-        {
-            _context.Books.Remove(item);
-            _context.SaveChanges();
-        }
-
-        public void Update(Book item)
-        {
-            _context.Books.Update(item);
-            _context.SaveChanges();
+            return _context.Books.Include(_b => _b.Category).ToList();
         }
     }
 }

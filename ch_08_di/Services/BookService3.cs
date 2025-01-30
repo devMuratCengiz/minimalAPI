@@ -1,7 +1,7 @@
 ﻿using Abstract;
 using AutoMapper;
 using ch_08_di.Configuration;
-using ch_08_di.Entities.DTOs;
+using ch_08_di.Entities.DTOs.Book;
 using ch_08_di.Repositories;
 using System.ComponentModel.DataAnnotations;
 
@@ -22,15 +22,7 @@ namespace ch_08_di.Services
 
         public Book AddBook(BookDtoForInsertion book)
         {
-            var validationResults = new List<ValidationResult>();
-            var context = new ValidationContext(book);
-            bool isValid = Validator.TryValidateObject(book, context, validationResults, true);
-
-            if (!isValid)
-            {
-                var errors = string.Join(" ", validationResults.Select(v => v.ErrorMessage));
-                throw new ValidationException(errors);
-            }
+            Validate<BookDtoForInsertion>(book);
 
             var newBook = _mapper.Map<Book>(book);
             _repository.Add(newBook);
@@ -43,7 +35,7 @@ namespace ch_08_di.Services
             var book = _repository.Get(id);
             if (book != null)
             {
-                _repository.Remove(book);
+                _repository.Delete(book);
             }
             else
             {
@@ -52,21 +44,22 @@ namespace ch_08_di.Services
             
         }
 
-        public Book? GetBookById(int id)
+        public BookDto? GetBookById(int id)
         {
             id.ValidateIdInRange();
             var book = _repository.Get(id);
             if (book is not null)
             {
-                return book;
+                return _mapper.Map<BookDto>(book);
             }
             
             throw new BookNotFoundException(id);
         }
 
-        public List<Book> GetBooks()
+        public ICollection<BookDto> GetBooks()
         {
-            return _repository.GetAll();
+            var books = _repository.GetAll();
+            return _mapper.Map<List<BookDto>>(books);
         }
 
         public Book UpdateBook(int id, BookDtoForUpdate updateBook)
@@ -74,15 +67,7 @@ namespace ch_08_di.Services
 
             id.ValidateIdInRange();
 
-            var validationResults = new List<ValidationResult>();
-            var context = new ValidationContext(updateBook);
-            var isValid = Validator.TryValidateObject(updateBook, context, validationResults, true);
-
-            if (!isValid)
-            {
-                var errors = string.Join(" ", validationResults.Select(v => v.ErrorMessage));
-                throw new ValidationException(errors);
-            }
+            Validate<BookDtoForUpdate>(updateBook);
 
             var book = _repository.Get(id);
 
@@ -90,6 +75,19 @@ namespace ch_08_di.Services
             _repository.Update(book);
             
             return book;
+        }
+
+        private void Validate<T>(T item)
+        {
+            var validationResult = new List<ValidationResult>();
+            var context = new ValidationContext(item);
+            var isValid = Validator.TryValidateObject(item, context, validationResult, true);
+
+            if (!isValid)
+            {
+                var errors = string.Join(" ", validationResult.Select(v => v.ErrorMessage));
+                throw new ValidationException(errors);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using ch_08_di.Entities.DTOs;
+using ch_08_di.Entities.DTOs.Book;
 
 namespace ch_08_di.Configuration
 {
@@ -9,6 +9,7 @@ namespace ch_08_di.Configuration
         {
             CreateMap<Book, BookDtoForInsertion>().ReverseMap();
             CreateMap<Book, BookDtoForUpdate>().ReverseMap();
+            CreateMap<Book,BookDto>().ReverseMap();
         }
     }
 }

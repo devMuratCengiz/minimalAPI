@@ -1,6 +1,6 @@
 using Abstract;
 using ch_08_di.Configuration;
-using ch_08_di.Entities.DTOs;
+using ch_08_di.Entities.DTOs.Book;
 using ch_08_di.Repositories;
 using ch_08_di.Services;
 using Microsoft.AspNetCore.Diagnostics;
