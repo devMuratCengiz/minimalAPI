@@ -1,4 +1,5 @@
 using Abstract;
+using ch_08_di.Configuration;
 using ch_08_di.Entities.DTOs;
 using ch_08_di.Repositories;
 using ch_08_di.Services;
@@ -38,35 +39,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseExceptionHandler((appError) =>
-{
-    appError.Run(async context =>
-    {
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = "application/json";
-        var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
-
-        if (contextFeature is not null)
-        {
-            context.Response.StatusCode = contextFeature.Error switch
-            {
-                NotFoundException => StatusCodes.Status404NotFound,
-                ValidationException => StatusCodes.Status422UnprocessableEntity,
-                ArgumentOutOfRangeException => StatusCodes.Status400BadRequest,
-                ArgumentException => StatusCodes.Status400BadRequest,
-                _ => StatusCodes.Status500InternalServerError,
-
-            };
-            await context.Response.WriteAsync(
-                new ErrorDetails()
-                {
-                    StatusCode = context.Response.StatusCode,
-                    Message = contextFeature.Error.Message
-                }.ToString());
-        }
-
-    });
-});
+app.UseCustomExceptionHandler();
 
 app.MapGet("/api/books", (IBookService service) =>
 {
@@ -82,7 +55,7 @@ app.MapGet("/api/books", (IBookService service) =>
 app.MapGet("/api/books/{id}", (int id , IBookService service) =>
 {
     var book = service.GetBookById(id);
-    return book is not null ? Results.Ok(book) : Results.NotFound();
+    return Results.Ok(book);
 })
     .Produces<Book>(StatusCodes.Status200OK)
     .Produces<ErrorDetails>(StatusCodes.Status404NotFound)
@@ -112,10 +85,6 @@ app.MapPut("/api/books/{id}", (int id, BookDtoForUpdate updateBook,IBookService 
 
 app.MapDelete("/api/books", (int id,IBookService service) =>
 {
-    if (!(id > 0 && id <= 1000))
-    {
-        throw new ArgumentOutOfRangeException("1-1000");
-    }
 
     service.DeleteBook(id);
     return Results.NoContent();

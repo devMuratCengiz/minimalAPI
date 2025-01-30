@@ -1,5 +1,6 @@
 ﻿using Abstract;
 using AutoMapper;
+using ch_08_di.Configuration;
 using ch_08_di.Entities.DTOs;
 using ch_08_di.Repositories;
 using System.ComponentModel.DataAnnotations;
@@ -38,6 +39,7 @@ namespace ch_08_di.Services
 
         public void DeleteBook(int id)
         {
+            id.ValidateIdInRange();
             var book = _repository.Get(id);
             if (book != null)
             {
@@ -52,6 +54,7 @@ namespace ch_08_di.Services
 
         public Book? GetBookById(int id)
         {
+            id.ValidateIdInRange();
             var book = _repository.Get(id);
             if (book is not null)
             {
@@ -69,10 +72,7 @@ namespace ch_08_di.Services
         public Book UpdateBook(int id, BookDtoForUpdate updateBook)
         {
 
-            if (!(id > 0 && id <= 1000))
-            {
-                throw new ArgumentOutOfRangeException("1-1000");
-            }
+            id.ValidateIdInRange();
 
             var validationResults = new List<ValidationResult>();
             var context = new ValidationContext(updateBook);
